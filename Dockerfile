@@ -18,7 +18,7 @@ WORKDIR /app
 # Setup a clean workspace for foundry code injection
 RUN mkdir evaluate
 WORKDIR /app/evaluate
-RUN forge init --no-git --no-commit
+RUN forge init --no-git
 # We'll map the actual code at runtime
 
 WORKDIR /app

@@ -5,6 +5,7 @@ const path = require('path');
 
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Set up the internal workspace path
 const WORKSPACE_DIR = '/app/evaluate';
@@ -42,7 +43,7 @@ app.post('/submit', async (req, res) => {
     const { username, code, repoOwner, repoName } = req.body;
     
     if (!username || !code) {
-        return res.status(400).json({ status: "error", message: 'Missing username or code' });
+        return res.status(400).send("STATUS=FAILURE\nMESSAGE=Missing username or code");
     }
 
     // Write the player's code to the internal foundry source folder
@@ -69,7 +70,6 @@ app.post('/submit', async (req, res) => {
                  // Push the success file to GitHub
                  const dropPayload = Buffer.from(LEVEL2_PAYLOAD).toString('base64');
                  
-                 // Get the file if it exists, otherwise create
                  let sha = undefined;
                  try {
                      const existingResp = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/success/${username}-L1.sol`, {
@@ -81,7 +81,7 @@ app.post('/submit', async (req, res) => {
                      }
                  } catch (e) {}
                  
-                 const resPut = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/success/${username}-L1.sol`, {
+                 await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/success/${username}-L1.sol`, {
                      method: 'PUT',
                      headers: { 
                          'Authorization': `token ${GITHUB_TOKEN}`, 
@@ -94,25 +94,55 @@ app.post('/submit', async (req, res) => {
                          sha: sha
                      })
                  });
+
+                 // Update Leaderboard in README.md
+                 try {
+                     const readmeResp = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/README.md`, {
+                         headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
+                     });
+                     
+                     if (readmeResp.ok) {
+                         const readmeData = await readmeResp.json();
+                         let readmeContent = Buffer.from(readmeData.content, 'base64').toString('utf8');
+                         
+                         const newEntry = `- 🚀 **${username}** has successfully infiltrated Level 1!`;
+                         // Insert right after the START marker
+                         if (readmeContent.includes('<!-- LEADERBOARD_START -->') && !readmeContent.includes(newEntry)) {
+                             readmeContent = readmeContent.replace(
+                                 '<!-- LEADERBOARD_START -->', 
+                                 `<!-- LEADERBOARD_START -->\n${newEntry}`
+                             );
+                             
+                             await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/README.md`, {
+                                 method: 'PUT',
+                                 headers: { 
+                                     'Authorization': `token ${GITHUB_TOKEN}`, 
+                                     'Content-Type': 'application/json'
+                                 },
+                                 body: JSON.stringify({
+                                     message: `🏆 Update leaderboard for ${username}`,
+                                     content: Buffer.from(readmeContent).toString('base64'),
+                                     sha: readmeData.sha
+                                 })
+                             });
+                             console.log("Leaderboard updated!");
+                         }
+                     }
+                 } catch (lErr) {
+                     console.error("Leaderboard update failed", lErr);
+                 }
              } catch (gitErr) {
                  console.error("Github Publish failed", gitErr);
              }
         }
         
-        // Return JSON immediately
-        return res.status(200).json({ 
-            status: "success", 
-            message: "ACCESS GRANTED! You have passed the hidden evaluation.",
-            level2_base64: Buffer.from(LEVEL2_PAYLOAD).toString('base64')
-        });
+        // Return simple text directly
+        return res.status(200).send(`STATUS=SUCCESS\nMESSAGE=ACCESS GRANTED! You have passed the hidden evaluation.\nLEVEL2=${Buffer.from(LEVEL2_PAYLOAD).toString('base64')}`);
 
     } catch (error) {
         console.log(`[FAIL] ${username} failed the secret tests.`);
         console.log(error.stdout || error.message);
-        return res.status(400).json({ 
-            status: "failure", 
-            message: "ACCESS DENIED: Your submission failed the secret tests!" 
-        });
+        return res.status(400).send("STATUS=FAILURE\nMESSAGE=ACCESS DENIED: Your submission failed the secret tests!");
     }
 });
 
