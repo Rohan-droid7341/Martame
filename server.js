@@ -34,7 +34,7 @@ try {
 const SECRET_TEST_URL = process.env.LEVEL_1_SECRET_URL;
 if (SECRET_TEST_URL) {
     console.log("Downloading secret tests...");
-    execSync(`mkdir -p ${WORKSPACE_DIR}/test-secrets && curl -sL "${SECRET_TEST_URL}" > ${WORKSPACE_DIR}/test-secrets/Level1Secret.t.sol`);
+    execSync(`curl -sL "${SECRET_TEST_URL}" > ${WORKSPACE_DIR}/test/Level1Secret.t.sol`);
 } else {
     console.warn("WARNING: LEVEL_1_SECRET_URL not set! Tests might fail if not mounted.");
 }
@@ -53,12 +53,16 @@ app.post('/submit', async (req, res) => {
     console.log(`Evaluating submission from Pilot: ${username} ...`);
 
     try {
-        // Run forge test via shell sync
-        const output = execSync('forge test --match-path "test-secrets/*.t.sol" -vv', {
+        // Run forge test explicitly pointing to the downloaded secret test
+        const output = execSync('forge test --match-path "test/Level1Secret.t.sol" -vv', {
             cwd: WORKSPACE_DIR,
             encoding: 'utf-8',
             stdio: 'pipe'
         });
+        
+        if (output.includes("No tests found to run") || output.includes("Ran 0 test suites")) {
+             throw new Error("Central Judge Misconfiguration: Secret tests didn't run. Please verify your Render environment variables.");
+        }
         
         console.log(`[PASS] ${username} successfully cleared Level 1!`);
 
