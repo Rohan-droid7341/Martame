@@ -30,12 +30,9 @@ try {
     // fallback to default above
 }
 
-// On boot, fetch the secret tests if env var is provided
+// The secret test URL is fetched directly during evaluation to ensure it's always up-to-date
 const SECRET_TEST_URL = process.env.LEVEL_1_SECRET_URL;
-if (SECRET_TEST_URL) {
-    console.log("Downloading secret tests...");
-    execSync(`curl -sL "${SECRET_TEST_URL}" > ${WORKSPACE_DIR}/test/Level1Secret.t.sol`);
-} else {
+if (!SECRET_TEST_URL) {
     console.warn("WARNING: LEVEL_1_SECRET_URL not set! Tests might fail if not mounted.");
 }
 
@@ -53,6 +50,10 @@ app.post('/submit', async (req, res) => {
     console.log(`Evaluating submission from Pilot: ${username} ...`);
 
     try {
+        if (SECRET_TEST_URL) {
+            execSync(`curl -sL "${SECRET_TEST_URL}" > ${WORKSPACE_DIR}/test/Level1Secret.t.sol`);
+        }
+
         // Run forge test explicitly pointing to the downloaded secret test
         const output = execSync('forge test --match-path "test/Level1Secret.t.sol" -vv', {
             cwd: WORKSPACE_DIR,
