@@ -72,34 +72,6 @@ app.post('/submit', async (req, res) => {
         if (GITHUB_TOKEN && repoOwner && repoName) {
              console.log("Updating Main Repository...");
              try {
-                 // Push the success file to GitHub
-                 const dropPayload = Buffer.from(LEVEL2_PAYLOAD).toString('base64');
-                 
-                 let sha = undefined;
-                 try {
-                     const existingResp = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/success/${username}-L1.sol`, {
-                         headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-                     });
-                     if (existingResp.ok) {
-                         const existBody = await existingResp.json();
-                         sha = existBody.sha;
-                     }
-                 } catch (e) {}
-                 
-                 await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/success/${username}-L1.sol`, {
-                     method: 'PUT',
-                     headers: { 
-                         'Authorization': `token ${GITHUB_TOKEN}`, 
-                         'Accept': 'application/vnd.github.v3+json',
-                         'Content-Type': 'application/json'
-                     },
-                     body: JSON.stringify({
-                         message: `🏆 ${username} beat Level 1!`,
-                         content: dropPayload,
-                         sha: sha
-                     })
-                 });
-
                  // Update Leaderboard in README.md
                  try {
                      const readmeResp = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/README.md`, {
@@ -110,27 +82,61 @@ app.post('/submit', async (req, res) => {
                          const readmeData = await readmeResp.json();
                          let readmeContent = Buffer.from(readmeData.content, 'base64').toString('utf8');
                          
-                         const newEntry = `- 🚀 **${username}** has successfully infiltrated Level 1!`;
-                         // Insert right after the START marker
-                         if (readmeContent.includes('<!-- LEADERBOARD_START -->') && !readmeContent.includes(newEntry)) {
-                             readmeContent = readmeContent.replace(
-                                 '<!-- LEADERBOARD_START -->', 
-                                 `<!-- LEADERBOARD_START -->\n${newEntry}`
-                             );
+                         const headerMatch = readmeContent.match(/<!-- LEADERBOARD_START -->\n(?:\|.*\|\n)?(?:\|.*\|\n)?/);
+                         if (headerMatch) {
+                             const tableStartData = readmeContent.substring(0, headerMatch.index + headerMatch[0].length);
+                             let tableEndIndex = readmeContent.indexOf('<!-- LEADERBOARD_END -->');
+                             let remainingReadme = readmeContent.substring(tableEndIndex);
                              
-                             await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/README.md`, {
-                                 method: 'PUT',
-                                 headers: { 
-                                     'Authorization': `token ${GITHUB_TOKEN}`, 
-                                     'Content-Type': 'application/json'
-                                 },
-                                 body: JSON.stringify({
-                                     message: `🏆 Update leaderboard for ${username}`,
-                                     content: Buffer.from(readmeContent).toString('base64'),
-                                     sha: readmeData.sha
-                                 })
+                             let rowsText = readmeContent.substring(headerMatch.index + headerMatch[0].length, tableEndIndex).trim();
+                             let rows = rowsText ? rowsText.split('\n') : [];
+                             
+                             let playerFound = false;
+                             let parsedRows = rows.map(r => {
+                                 let cols = r.split('|').filter(c => c.trim() !== '');
+                                 if (cols.length >= 4) {
+                                     let pilot = cols[1].trim();
+                                     let level = parseInt(cols[2].trim()) || 1;
+                                     let timeStr = cols[3].trim();
+                                     if (pilot === username) {
+                                         playerFound = true;
+                                         level = 1;
+                                         timeStr = new Date().toISOString();
+                                     }
+                                     return { pilot, level, timeStr };
+                                 }
+                                 return null;
+                             }).filter(r => r !== null);
+                             
+                             if (!playerFound) {
+                                 parsedRows.push({ pilot: username, level: 1, timeStr: new Date().toISOString().replace('T', ' ').substring(0, 19) });
+                             }
+                             
+                             // Sort descending by level, then ascending by time
+                             parsedRows.sort((a, b) => {
+                                 if (a.level !== b.level) return b.level - a.level;
+                                 return new Date(a.timeStr) - new Date(b.timeStr);
                              });
-                             console.log("Leaderboard updated!");
+                             
+                             let newRowsText = parsedRows.map((r, i) => `| ${i+1} | ${r.pilot} | ${r.level} | ${r.timeStr} |`).join('\n');
+                             
+                             let newReadmeContent = tableStartData + newRowsText + '\n' + remainingReadme;
+                             
+                             if (newReadmeContent !== readmeContent) {
+                                 await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/README.md`, {
+                                     method: 'PUT',
+                                     headers: { 
+                                         'Authorization': `token ${GITHUB_TOKEN}`, 
+                                         'Content-Type': 'application/json'
+                                     },
+                                     body: JSON.stringify({
+                                         message: `🏆 Update leaderboard for ${username}`,
+                                         content: Buffer.from(newReadmeContent).toString('base64'),
+                                         sha: readmeData.sha
+                                     })
+                                 });
+                                 console.log("Leaderboard updated!");
+                             }
                          }
                      }
                  } catch (lErr) {
