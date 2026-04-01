@@ -19,13 +19,14 @@ WORKDIR /app
 RUN mkdir evaluate
 WORKDIR /app/evaluate
 RUN forge init --no-git
-# We'll map the actual code at runtime
+RUN forge install OpenZeppelin/openzeppelin-contracts --no-commit
 
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
 COPY server.js .
+COPY levels_vault ./levels_vault
 
 EXPOSE 3000
 CMD ["node", "server.js"]
