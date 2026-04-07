@@ -18,7 +18,8 @@ WORKDIR /app
 # Setup a clean workspace for foundry code injection
 RUN mkdir evaluate
 WORKDIR /app/evaluate
-RUN forge init --no-git
+RUN git config --global user.name "Judge" && git config --global user.email "judge@example.com"
+RUN forge init
 RUN forge install OpenZeppelin/openzeppelin-contracts --no-commit
 
 WORKDIR /app
