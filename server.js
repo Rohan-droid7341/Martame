@@ -27,7 +27,7 @@ app.post('/submit', async (req, res) => {
     try {
         const secretTestFile = path.join(__dirname, 'levels_vault', `Level${level}`, `Level${level}_secret.t.sol`);
         if (!fs.existsSync(secretTestFile)) {
-             throw new Error(`Mission Level ${level} is currently classified. Tests not found.`);
+             throw new Error(`Mission Level ${level} is currently classified. Tests not found at ${secretTestFile}`);
         }
         
         fs.copyFileSync(secretTestFile, path.join(WORKSPACE_DIR, 'test', `Level${level}_secret.t.sol`));

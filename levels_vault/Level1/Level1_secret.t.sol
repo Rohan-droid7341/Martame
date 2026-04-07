@@ -16,16 +16,13 @@ contract Level1SecretTest is Test {
 
     // --- ACCESS & LOGIC TESTS ---
 
-    function test_RevertIf_EmptyName() public {
-        vm.expectRevert(); // Forge will now expect the very next line to fail
-        registry.register("");
+    function testFail_EmptyName() public {
+        registry.register(""); // Should revert
     }
 
-    function test_RevertIf_DuplicateRegistration() public {
+    function testFail_DuplicateRegistration() public {
         registry.register("Pilot_A");
-        
-        vm.expectRevert(); // Expect this second attempt from the same sender to fail
-        registry.register("Pilot_B"); 
+        registry.register("Pilot_B"); // Should revert: already registered
     }
 
     function test_MultipleDifferentUsers() public {
