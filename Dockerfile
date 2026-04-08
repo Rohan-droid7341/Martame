@@ -20,8 +20,6 @@ RUN mkdir evaluate
 WORKDIR /app/evaluate
 RUN git config --global user.name "Judge" && git config --global user.email "judge@example.com"
 RUN forge init
-RUN forge install OpenZeppelin/openzeppelin-contracts@v4.9.3
-RUN echo "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/" > remappings.txt
 
 WORKDIR /app
 COPY package*.json ./
