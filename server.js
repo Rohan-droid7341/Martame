@@ -30,7 +30,7 @@ app.post('/submit', async (req, res) => {
     const playerCodePath = path.join(srcDir, `Level${level}.sol`);
     fs.writeFileSync(playerCodePath, code);
 
-    console.log(`Evaluating Level ${level} submission from Pilot: ${username} ...`);
+    console.log(`Evaluating Level ${level} submission from Player: ${username} ...`);
 
     try {
         const secretTestFile = path.join(__dirname, 'levels_vault', `Level${level}`, `Level${level}_secret.t.sol`);
@@ -134,7 +134,13 @@ app.post('/submit', async (req, res) => {
         }
         
         // Build dynamic payload response securely without Gists
-        let responsePayload = `STATUS=SUCCESS\nMESSAGE=ACCESS GRANTED! You have passed the hidden evaluation.\n`;
+        let responsePayload = `STATUS=SUCCESS\n`;
+        if (level === 4) {
+             responsePayload += `MESSAGE=💎 MISSION ACCOMPLISHED! You have successfully conquered all 4 levels of the Contract Battle! You are the ultimate Blockchain Champion! 💎\n`;
+        } else {
+             responsePayload += `MESSAGE=ACCESS GRANTED! You have passed the hidden evaluation.\n`;
+        }
+        
         const nextLevel = level + 1;
         const nextLevelDir = path.join(__dirname, 'levels_vault', `Level${nextLevel}`);
         
@@ -161,5 +167,5 @@ app.post('/submit', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Central Judge Server blasting off on port ${PORT}...`);
+    console.log(`🚀 Central Judge Server online on port ${PORT}...`);
 });
