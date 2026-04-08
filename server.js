@@ -18,8 +18,15 @@ app.post('/submit', async (req, res) => {
         return res.status(400).send("STATUS=FAILURE\nMESSAGE=Missing username or code");
     }
 
+    // Isolate workspace by clearing previous submissions
+    const srcDir = path.join(WORKSPACE_DIR, 'src');
+    const testDir = path.join(WORKSPACE_DIR, 'test');
+    try {
+        execSync(`rm -rf ${srcDir}/* && rm -rf ${testDir}/*`);
+    } catch(e) {}
+
     // Write the player's code to the internal foundry source folder
-    const playerCodePath = path.join(WORKSPACE_DIR, 'src', `Level${level}.sol`);
+    const playerCodePath = path.join(srcDir, `Level${level}.sol`);
     fs.writeFileSync(playerCodePath, code);
 
     console.log(`Evaluating Level ${level} submission from Pilot: ${username} ...`);
