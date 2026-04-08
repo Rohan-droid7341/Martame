@@ -21,8 +21,9 @@ app.post('/submit', async (req, res) => {
     // Isolate workspace by clearing previous submissions
     const srcDir = path.join(WORKSPACE_DIR, 'src');
     const testDir = path.join(WORKSPACE_DIR, 'test');
+    const scriptDir = path.join(WORKSPACE_DIR, 'script');
     try {
-        execSync(`rm -rf ${srcDir}/* && rm -rf ${testDir}/*`);
+        execSync(`rm -rf ${srcDir}/* && rm -rf ${testDir}/* && rm -rf ${scriptDir}/*`);
     } catch(e) {}
 
     // Write the player's code to the internal foundry source folder
