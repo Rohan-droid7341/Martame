@@ -1,13 +1,14 @@
-# Level 2 - Central Vault Access
+# Level 2: The Plasma Vault
 
-**Mission:** You successfully registered your ship. Now you must bypass the Central Vault's lock mechanism.
+## 📜 Mission Brief
+Welcome to the Plasma Vault, the central staking core of the ship's energy distribution network. Crew members deposit raw Plasma (Ethereum) into the vault and withdraw it when needed.
 
-**Your Task:**
-Complete the `enter` function inside `src/Level2.sol`.
+However, telemetry indicates that malicious engineers could theoretically trick the vault into dispensing more Plasma than they deposited, draining the entire ship!
 
-## Requirements:
-- The passkey must be exactly `9999`.
-- If the passkey is correct, set `hasAccess[msg.sender] = true`.
-- If the passkey is incorrect, `revert` the transaction.
+## 🎯 Objectives
+1. Read the `PlasmaVault` code carefully.
+2. Identify a critical vulnerability that allows a hacker to drain funds recursively.
+3. Secure the `withdraw()` function natively.
+4. **DO NOT** use OpenZeppelin or external libraries. Use raw Solidity logic!
 
-*Tip: Make sure you use a `require` statement to enforce the passkey!*
+*Hint*: Ensure state updates happen in the correct sequence...
