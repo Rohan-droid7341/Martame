@@ -16,13 +16,15 @@ contract Level1SecretTest is Test {
 
     // --- ACCESS & LOGIC TESTS ---
 
-    function testFail_EmptyName() public {
-        registry.register(""); // Should revert
+    function test_RevertIf_EmptyName() public {
+        vm.expectRevert("Name cannot be empty");
+        registry.register("");
     }
 
-    function testFail_DuplicateRegistration() public {
+    function test_RevertIf_DuplicateRegistration() public {
         registry.register("Pilot_A");
-        registry.register("Pilot_B"); // Should revert: already registered
+        vm.expectRevert("Already registered");
+        registry.register("Pilot_B");
     }
 
     function test_MultipleDifferentUsers() public {

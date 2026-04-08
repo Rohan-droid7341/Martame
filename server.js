@@ -147,7 +147,7 @@ app.post('/submit', async (req, res) => {
     } catch (error) {
         console.log(`[FAIL] ${username} failed the secret tests.`);
         console.log(error.stdout || error.message);
-        return res.status(400).send(`STATUS=FAILURE\nMESSAGE=${error.message.replace(/\n/g, ' ')}\n`);
+        return res.status(400).send(`STATUS=FAILURE\nMESSAGE=ACCESS DENIED: Your submission failed the secret tests. Review your local logic carefully and try again.\n`);
     }
 });
 
